@@ -56,6 +56,7 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
+    allowedHosts: ['experimental-tap-alpha.hnyxm9.easypanel.host'],
     proxy: {
       '/api': {
         target: 'http://localhost:3000',
