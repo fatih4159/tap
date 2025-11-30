@@ -59,8 +59,12 @@ if [ -f "$BACKEND_PID_FILE" ]; then
     if ps -p "$BACKEND_PID" > /dev/null 2>&1; then
         print_info "Stopping backend (PID: $BACKEND_PID)..."
         
+        # Kill the entire process group (npm and all its children)
+        # This ensures child processes (node) are also killed
+        PGID=$(ps -o pgid= "$BACKEND_PID" | tr -d ' ')
+        
         # Try graceful shutdown first
-        kill "$BACKEND_PID" 2>/dev/null
+        kill -- -"$PGID" 2>/dev/null || kill "$BACKEND_PID" 2>/dev/null
         
         # Wait up to 10 seconds for graceful shutdown
         for i in {1..10}; do
@@ -73,7 +77,7 @@ if [ -f "$BACKEND_PID_FILE" ]; then
         # Force kill if still running
         if ps -p "$BACKEND_PID" > /dev/null 2>&1; then
             print_warning "Forcing backend shutdown..."
-            kill -9 "$BACKEND_PID" 2>/dev/null
+            kill -9 -- -"$PGID" 2>/dev/null || kill -9 "$BACKEND_PID" 2>/dev/null
             sleep 1
         fi
         
@@ -102,8 +106,12 @@ if [ -f "$FRONTEND_PID_FILE" ]; then
     if ps -p "$FRONTEND_PID" > /dev/null 2>&1; then
         print_info "Stopping frontend (PID: $FRONTEND_PID)..."
         
+        # Kill the entire process group (npm and all its children)
+        # This ensures child processes (node/vite) are also killed
+        PGID=$(ps -o pgid= "$FRONTEND_PID" | tr -d ' ')
+        
         # Try graceful shutdown first
-        kill "$FRONTEND_PID" 2>/dev/null
+        kill -- -"$PGID" 2>/dev/null || kill "$FRONTEND_PID" 2>/dev/null
         
         # Wait up to 10 seconds for graceful shutdown
         for i in {1..10}; do
@@ -116,7 +124,7 @@ if [ -f "$FRONTEND_PID_FILE" ]; then
         # Force kill if still running
         if ps -p "$FRONTEND_PID" > /dev/null 2>&1; then
             print_warning "Forcing frontend shutdown..."
-            kill -9 "$FRONTEND_PID" 2>/dev/null
+            kill -9 -- -"$PGID" 2>/dev/null || kill -9 "$FRONTEND_PID" 2>/dev/null
             sleep 1
         fi
         
@@ -145,24 +153,31 @@ print_info "Checking for any remaining processes on ports 3000 and 5173..."
 
 # Check port 3000 (backend)
 if command -v lsof &> /dev/null; then
-    BACKEND_PORT_PID=$(lsof -ti:3000 2>/dev/null || true)
-    if [ ! -z "$BACKEND_PORT_PID" ]; then
-        print_warning "Found process on port 3000 (PID: $BACKEND_PORT_PID), killing it..."
-        kill -9 "$BACKEND_PORT_PID" 2>/dev/null || true
-        print_success "Killed process on port 3000"
+    BACKEND_PORT_PIDS=$(lsof -ti:3000 2>/dev/null || true)
+    if [ ! -z "$BACKEND_PORT_PIDS" ]; then
+        print_warning "Found process(es) on port 3000, killing them..."
+        for PID in $BACKEND_PORT_PIDS; do
+            kill -9 "$PID" 2>/dev/null || true
+            print_success "Killed process $PID on port 3000"
+        done
+    else
+        print_success "Port 3000 is free"
     fi
     
     # Check port 5173 (frontend)
-    FRONTEND_PORT_PID=$(lsof -ti:5173 2>/dev/null || true)
-    if [ ! -z "$FRONTEND_PORT_PID" ]; then
-        print_warning "Found process on port 5173 (PID: $FRONTEND_PORT_PID), killing it..."
-        kill -9 "$FRONTEND_PORT_PID" 2>/dev/null || true
-        print_success "Killed process on port 5173"
+    FRONTEND_PORT_PIDS=$(lsof -ti:5173 2>/dev/null || true)
+    if [ ! -z "$FRONTEND_PORT_PIDS" ]; then
+        print_warning "Found process(es) on port 5173, killing them..."
+        for PID in $FRONTEND_PORT_PIDS; do
+            kill -9 "$PID" 2>/dev/null || true
+            print_success "Killed process $PID on port 5173"
+        done
+    else
+        print_success "Port 5173 is free"
     fi
-elif command -v fuser &> /dev/null; then
-    # Alternative method using fuser
-    fuser -k 3000/tcp 2>/dev/null && print_success "Killed process on port 3000" || true
-    fuser -k 5173/tcp 2>/dev/null && print_success "Killed process on port 5173" || true
+else
+    print_warning "lsof not available, cannot verify ports are free"
+    print_info "Install lsof with: apt-get install lsof (or your package manager)"
 fi
 
 # =============================================================================

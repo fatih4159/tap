@@ -80,6 +80,23 @@ check_running() {
         fi
     fi
     
+    # Check if ports are already in use
+    if command -v lsof &> /dev/null; then
+        if lsof -ti:3000 &> /dev/null; then
+            print_error "Port 3000 is already in use!"
+            print_info "Kill the process with: lsof -ti:3000 | xargs kill -9"
+            print_info "Or run: ./stop.sh to clean up"
+            return 1
+        fi
+        
+        if lsof -ti:5173 &> /dev/null; then
+            print_error "Port 5173 is already in use!"
+            print_info "Kill the process with: lsof -ti:5173 | xargs kill -9"
+            print_info "Or run: ./stop.sh to clean up"
+            return 1
+        fi
+    fi
+    
     return 0
 }
 

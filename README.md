@@ -99,6 +99,25 @@ A complete, SaaS-ready, multi-tenant Point-of-Sale and Ordering System for the g
 
 ### Installation
 
+#### Option 1: Automated Setup (Recommended)
+
+```bash
+# Clone the repo
+git clone <repo-url>
+cd tap
+
+# Run the initialization script
+./init.sh
+
+# Start services (runs in background)
+./start.sh
+
+# Stop services when done
+./stop.sh
+```
+
+#### Option 2: Manual Setup
+
 ```bash
 # Clone the repo
 git clone <repo-url>
@@ -123,6 +142,18 @@ npm run dev
 - **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:3000
 - **Health Check**: http://localhost:3000/health
+
+### Troubleshooting
+
+If you encounter port conflicts (e.g., "Port 3000 is already in use"):
+
+```bash
+# Force cleanup ports and restart
+./cleanup-ports.sh
+./start.sh
+```
+
+See [PORT_FIX_DOCUMENTATION.md](./PORT_FIX_DOCUMENTATION.md) for details.
 
 ## 📁 Project Structure
 
