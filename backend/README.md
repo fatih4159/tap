@@ -66,12 +66,8 @@ npm run dev
 NODE_ENV=development
 PORT=3000
 
-# Database
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=gastro_pos
-DB_USER=postgres
-DB_PASSWORD=your_password
+# Database (use single connection string)
+DATABASE_URL=postgresql://postgres:your_password@localhost:5432/gastro_pos
 
 # JWT
 JWT_SECRET=your-super-secret-key
