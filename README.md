@@ -1,8 +1,8 @@
-# 🍽️ Gastro POS
+# 🍽️ tap
 
 A complete, SaaS-ready, multi-tenant Point-of-Sale and Ordering System for the gastronomy sector.
 
-![Gastro POS](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![tap](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![Node.js](https://img.shields.io/badge/node-%3E%3D18.0.0-green.svg)
 ![React](https://img.shields.io/badge/react-18.2.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
@@ -102,7 +102,7 @@ A complete, SaaS-ready, multi-tenant Point-of-Sale and Ordering System for the g
 ```bash
 # Clone the repo
 git clone <repo-url>
-cd gastro-pos
+cd tap
 
 # Setup backend
 cd backend
@@ -127,7 +127,7 @@ npm run dev
 ## 📁 Project Structure
 
 ```
-gastro-pos/
+tap/
 ├── backend/
 │   ├── src/
 │   │   ├── config/         # Configuration

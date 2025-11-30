@@ -61,7 +61,7 @@ app.get('/health', async (req, res) => {
 // API info endpoint
 app.get('/api', (req, res) => {
   res.json({
-    message: 'Gastro POS API',
+    message: 'tap API',
     version: '1.0.0',
     tenant: req.tenant ? req.tenant.name : 'No tenant context',
   });
@@ -117,7 +117,7 @@ const startServer = async () => {
 
     server.listen(config.port, () => {
       console.log(`
-🚀 Gastro POS Server Started!
+🚀 tap Server Started!
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📍 Environment: ${config.env}
 🌐 URL: http://localhost:${config.port}

@@ -1,5 +1,5 @@
 {
-  "name": "gastro-pos-backend",
+  "name": "tap-backend",
   "version": "1.0.0",
   "description": "Multi-tenant POS and Ordering System for Gastronomy",
   "main": "src/index.js",

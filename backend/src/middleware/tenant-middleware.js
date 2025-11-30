@@ -4,7 +4,7 @@ const { query } = require('../config/db-connection');
  * Tenant Middleware
  * Extracts tenant context from request and validates tenant access.
  * Supports multiple tenant identification methods:
- * 1. Subdomain (e.g., restaurant-name.gastro-pos.com)
+ * 1. Subdomain (e.g., restaurant-name.tap.com)
  * 2. Header (X-Tenant-ID)
  * 3. Query parameter (for QR code flows)
  * 4. JWT token (for authenticated users)
