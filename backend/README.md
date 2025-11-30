@@ -1,4 +1,4 @@
-# Gastro POS - Multi-Tenant Restaurant POS System
+# tap - Multi-Tenant Restaurant POS System
 
 A SaaS-ready, multi-tenant Point-of-Sale and Ordering System for the gastronomy sector.
 

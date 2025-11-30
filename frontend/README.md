@@ -1,4 +1,4 @@
-# Gastro POS - Frontend
+# tap - Frontend
 
 A modern, touch-optimized PWA for restaurant point of sale operations.
 

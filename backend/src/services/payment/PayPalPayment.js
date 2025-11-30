@@ -83,7 +83,7 @@ class PayPalPayment extends PaymentGateway {
       application_context: {
         return_url: returnUrl,
         cancel_url: cancelUrl,
-        brand_name: this.config.brandName || 'Gastro POS',
+        brand_name: this.config.brandName || 'tap',
         landing_page: 'NO_PREFERENCE',
         user_action: 'PAY_NOW',
       },

@@ -9,8 +9,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
-        name: 'Gastro POS',
-        short_name: 'GastroPOS',
+        name: 'tap',
+        short_name: 'tap',
         description: 'Restaurant Point of Sale System',
         theme_color: '#0f172a',
         background_color: '#0f172a',
