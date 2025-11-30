@@ -1,0 +1,29 @@
+
+> tap-backend@1.0.0 start
+> node src/index.js
+
+🔌 Testing database connection...
+❌ Database connection failed: getaddrinfo ENOTFOUND experimental_tap-postures
+⚠️  Database connection failed. Server will start but some features may not work.
+🔌 Socket.IO server initialized
+node:events:497
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: listen EADDRINUSE: address already in use :::26053
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at Server.listen (node:net:2102:7)
+    at startServer (/workspace/backend/src/index.js:118:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+Emitted 'error' event on Server instance at:
+    at emitErrorNT (node:net:1976:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  code: 'EADDRINUSE',
+  errno: -98,
+  syscall: 'listen',
+  address: '::',
+  port: 26053
+}
+
+Node.js v22.21.1
