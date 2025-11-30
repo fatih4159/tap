@@ -55,6 +55,48 @@ BACKEND_LOG="$LOG_DIR/backend.log"
 FRONTEND_LOG="$LOG_DIR/frontend.log"
 
 # =============================================================================
+# Install lsof if not available
+# =============================================================================
+install_lsof() {
+    if ! command -v lsof &> /dev/null; then
+        print_info "lsof not found. Installing..."
+        
+        # Detect package manager and install
+        if command -v apt-get &> /dev/null; then
+            apt-get update -qq && apt-get install -y lsof > /dev/null 2>&1
+            if [ $? -eq 0 ]; then
+                print_success "lsof installed successfully"
+            else
+                print_warning "Failed to install lsof. Port cleanup may not work."
+            fi
+        elif command -v apt &> /dev/null; then
+            apt update -qq && apt install -y lsof > /dev/null 2>&1
+            if [ $? -eq 0 ]; then
+                print_success "lsof installed successfully"
+            else
+                print_warning "Failed to install lsof. Port cleanup may not work."
+            fi
+        elif command -v yum &> /dev/null; then
+            yum install -y lsof > /dev/null 2>&1
+            if [ $? -eq 0 ]; then
+                print_success "lsof installed successfully"
+            else
+                print_warning "Failed to install lsof. Port cleanup may not work."
+            fi
+        elif command -v brew &> /dev/null; then
+            brew install lsof > /dev/null 2>&1
+            if [ $? -eq 0 ]; then
+                print_success "lsof installed successfully"
+            else
+                print_warning "Failed to install lsof. Port cleanup may not work."
+            fi
+        else
+            print_warning "Could not detect package manager. Please install lsof manually."
+        fi
+    fi
+}
+
+# =============================================================================
 # Check if services are already running
 # =============================================================================
 check_running() {
@@ -104,6 +146,18 @@ check_running() {
 # Start Services
 # =============================================================================
 print_header "Starting TAP POS System"
+
+# Install lsof if needed
+install_lsof
+
+# Run port cleanup to ensure ports are free
+print_info "Running port cleanup..."
+if [ -f "$SCRIPT_DIR/cleanup-ports.sh" ]; then
+    bash "$SCRIPT_DIR/cleanup-ports.sh" || true
+    echo ""
+else
+    print_warning "cleanup-ports.sh not found, skipping port cleanup"
+fi
 
 if ! check_running; then
     print_error "Services are already running. Stop them first with ./stop.sh"
