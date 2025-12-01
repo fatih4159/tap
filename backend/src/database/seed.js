@@ -94,7 +94,7 @@ const DEMO_MENU_ITEMS = [
   { categoryIndex: 3, name: 'House Wine', description: 'Red or white, per glass', price: 5.50, taxRate: 19 },
 ];
 
-async function seed() {
+async function seed(forceReseed = false) {
   console.log('🌱 Starting database seeding...\n');
 
   const isConnected = await testConnection();
@@ -115,13 +115,20 @@ async function seed() {
     );
 
     if (existingTenant.rows.length > 0) {
-      console.log('⚠️  Demo tenant already exists. Skipping seed.');
-      console.log('\n📋 Existing Demo Credentials:');
-      console.log('   Email: admin@demo.com');
-      console.log('   Password: admin123');
-      console.log('   PIN: 1234\n');
-      await client.query('ROLLBACK');
-      return;
+      if (forceReseed) {
+        console.log('🗑️  Force reseed: Deleting existing demo tenant and data...');
+        await client.query('DELETE FROM tenants WHERE slug = $1', [DEMO_TENANT.slug]);
+        console.log('   ✅ Deleted existing demo data\n');
+      } else {
+        console.log('⚠️  Demo tenant already exists. Skipping seed.');
+        console.log('   Use --force to reseed: npm run seed:force');
+        console.log('\n📋 Existing Demo Credentials:');
+        console.log('   Email: admin@demo.com');
+        console.log('   Password: admin123');
+        console.log('   PIN: 1234\n');
+        await client.query('ROLLBACK');
+        return;
+      }
     }
 
     // 1. Create tenant
@@ -277,7 +284,8 @@ async function seed() {
 
 // Run if called directly
 if (require.main === module) {
-  seed()
+  const forceReseed = process.argv.includes('--force') || process.argv.includes('-f');
+  seed(forceReseed)
     .then(() => process.exit(0))
     .catch((error) => {
       console.error('Seed error:', error);

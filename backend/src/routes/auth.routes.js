@@ -125,15 +125,27 @@ router.post(
     try {
       const { email, password } = req.body;
 
+      console.log('[Auth] Login attempt for email:', email);
+
       // Find user globally (across all tenants)
       const userRecord = await User.findByEmailGlobal(email);
 
       if (!userRecord) {
+        console.log('[Auth] User not found for email:', email);
         return res.status(401).json({
           error: 'Invalid credentials',
           message: 'Email or password is incorrect',
         });
       }
+      
+      console.log('[Auth] User found:', { 
+        id: userRecord.id, 
+        email: userRecord.email,
+        is_active: userRecord.is_active,
+        tenant_status: userRecord.tenant_status,
+        hasPasswordHash: !!userRecord.password_hash,
+        passwordHashLength: userRecord.password_hash?.length
+      });
 
       // Check tenant status
       if (userRecord.tenant_status !== 'active') {
@@ -144,9 +156,12 @@ router.post(
       }
 
       // Verify password
+      console.log('[Auth] Verifying password...');
       const isValidPassword = await User.verifyPassword(password, userRecord.password_hash);
+      console.log('[Auth] Password valid:', isValidPassword);
 
       if (!isValidPassword) {
+        console.log('[Auth] Password verification failed for user:', userRecord.email);
         return res.status(401).json({
           error: 'Invalid credentials',
           message: 'Email or password is incorrect',
