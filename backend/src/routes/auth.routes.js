@@ -22,6 +22,94 @@ const handleValidationErrors = (req, res, next) => {
 };
 
 /**
+ * @route POST /api/auth/register
+ * @desc Register a new tenant and admin user
+ * @access Public
+ */
+router.post(
+  '/register',
+  [
+    body('restaurantName').notEmpty().trim().withMessage('Restaurant name is required'),
+    body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
+    body('password')
+      .isLength({ min: 8 })
+      .withMessage('Password must be at least 8 characters'),
+    body('firstName').optional().trim(),
+    body('lastName').optional().trim(),
+  ],
+  handleValidationErrors,
+  async (req, res) => {
+    try {
+      const { restaurantName, email, password, firstName, lastName } = req.body;
+
+      // Check if email already exists
+      const existingUser = await User.findByEmailGlobal(email);
+      if (existingUser) {
+        return res.status(400).json({
+          error: 'Registration failed',
+          message: 'An account with this email already exists',
+        });
+      }
+
+      // Generate a unique slug from restaurant name
+      let slug = restaurantName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+      
+      // Check if slug is available, if not append a random string
+      let isAvailable = await Tenant.isSlugAvailable(slug);
+      if (!isAvailable) {
+        slug = `${slug}-${Math.random().toString(36).substring(2, 7)}`;
+      }
+
+      // Create tenant
+      const tenant = await Tenant.create({
+        name: restaurantName,
+        slug,
+        email,
+        subscriptionPlan: 'starter',
+      });
+
+      // Create admin user for the tenant
+      const user = await User.create(tenant.id, {
+        email,
+        password,
+        firstName: firstName || null,
+        lastName: lastName || null,
+        role: 'admin',
+      });
+
+      // Generate token
+      const token = generateToken(user, tenant);
+
+      res.status(201).json({
+        message: 'Registration successful',
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+        },
+        tenant: {
+          id: tenant.id,
+          name: tenant.name,
+          slug: tenant.slug,
+        },
+      });
+    } catch (error) {
+      console.error('Registration error:', error);
+      res.status(500).json({
+        error: 'Registration failed',
+        message: 'An error occurred during registration',
+      });
+    }
+  }
+);
+
+/**
  * @route POST /api/auth/login
  * @desc Login with email and password
  * @access Public
