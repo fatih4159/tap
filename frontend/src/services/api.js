@@ -71,6 +71,7 @@ export const api = {
 // Auth API
 export const authApi = {
   login: (email, password) => api.post('/auth/login', { email, password }),
+  register: (data) => api.post('/auth/register', data),
   pinLogin: (pin) => api.post('/auth/pin-login', { pin }),
   me: () => api.get('/auth/me'),
   refreshToken: () => api.post('/auth/refresh'),

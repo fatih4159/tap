@@ -8,6 +8,7 @@ import GuestLayout from './components/layout/GuestLayout';
 
 // Auth Pages
 import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 
 // Dashboard Pages
 import DashboardPage from './pages/DashboardPage';
@@ -47,6 +48,7 @@ function App() {
     <Routes>
       {/* Public Routes */}
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
       
       {/* Guest Ordering (via QR code) */}
       <Route path="/order/:token" element={

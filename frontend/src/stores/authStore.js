@@ -44,6 +44,33 @@ export const useAuthStore = create(
         }
       },
 
+      register: async (data) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await authApi.register(data);
+          const { token, user, tenant } = response;
+
+          localStorage.setItem('token', token);
+          localStorage.setItem('tenantId', tenant.id);
+
+          // Connect socket with new token
+          connectSocket(token);
+
+          set({
+            user,
+            tenant,
+            token,
+            isAuthenticated: true,
+            isLoading: false,
+          });
+
+          return { success: true };
+        } catch (error) {
+          set({ error: error.message, isLoading: false });
+          return { success: false, error: error.message };
+        }
+      },
+
       pinLogin: async (pin) => {
         set({ isLoading: true, error: null });
         try {
