@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const config = require('../config');
 const User = require('../models/User');
+const SuperAdmin = require('../models/SuperAdmin');
 
 /**
  * Authentication Middleware
@@ -20,6 +21,24 @@ const generateToken = (user, tenant) => {
     email: user.email,
     role: user.role,
     tenantSlug: tenant.slug,
+  };
+
+  return jwt.sign(payload, config.jwt.secret, {
+    expiresIn: config.jwt.expiresIn,
+  });
+};
+
+/**
+ * Generate JWT token for super admin
+ * @param {Object} superAdmin - Super admin object
+ * @returns {string} JWT token
+ */
+const generateSuperAdminToken = (superAdmin) => {
+  const payload = {
+    superAdminId: superAdmin.id,
+    email: superAdmin.email,
+    isSuperAdmin: true,
+    permissions: superAdmin.permissions || ['all'],
   };
 
   return jwt.sign(payload, config.jwt.secret, {
@@ -179,13 +198,166 @@ const hasMinimumRole = (userRole, requiredRole) => {
   return userLevel >= requiredLevel;
 };
 
+/**
+ * Super Admin authentication middleware
+ * Validates JWT and attaches super admin to request
+ */
+const authenticateSuperAdmin = async (req, res, next) => {
+  try {
+    // Get token from header
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'No authentication token provided',
+      });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = verifyToken(token);
+
+    if (!decoded || !decoded.isSuperAdmin) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'Invalid or expired super admin token',
+      });
+    }
+
+    // Verify super admin still exists and is active
+    const superAdmin = await SuperAdmin.findById(decoded.superAdminId);
+    
+    if (!superAdmin || !superAdmin.isActive) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'Super admin account not found or inactive',
+      });
+    }
+
+    // Attach super admin to request
+    req.superAdmin = {
+      ...superAdmin,
+      isSuperAdmin: true,
+    };
+
+    next();
+  } catch (error) {
+    console.error('Super admin authentication error:', error);
+    res.status(500).json({
+      error: 'Authentication failed',
+      message: 'Error processing super admin authentication',
+    });
+  }
+};
+
+/**
+ * Middleware that accepts either regular auth or super admin auth
+ * Super admins can access tenant-scoped resources with cross-tenant access
+ */
+const authenticateAny = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'No authentication token provided',
+      });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = verifyToken(token);
+
+    if (!decoded) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'Invalid or expired token',
+      });
+    }
+
+    // Check if this is a super admin token
+    if (decoded.isSuperAdmin) {
+      const superAdmin = await SuperAdmin.findById(decoded.superAdminId);
+      
+      if (!superAdmin || !superAdmin.isActive) {
+        return res.status(401).json({
+          error: 'Unauthorized',
+          message: 'Super admin account not found or inactive',
+        });
+      }
+
+      req.superAdmin = {
+        ...superAdmin,
+        isSuperAdmin: true,
+      };
+      req.isSuperAdmin = true;
+    } else {
+      // Regular user authentication
+      const user = await User.findById(decoded.tenantId, decoded.userId);
+      
+      if (!user || !user.isActive) {
+        return res.status(401).json({
+          error: 'Unauthorized',
+          message: 'User account not found or inactive',
+        });
+      }
+
+      req.user = {
+        ...user,
+        tenantId: decoded.tenantId,
+        tenantSlug: decoded.tenantSlug,
+      };
+
+      if (!req.tenantId) {
+        req.tenantId = decoded.tenantId;
+      }
+    }
+
+    next();
+  } catch (error) {
+    console.error('Authentication error:', error);
+    res.status(500).json({
+      error: 'Authentication failed',
+      message: 'Error processing authentication',
+    });
+  }
+};
+
+/**
+ * Super admin only middleware
+ * Rejects non-super admin requests
+ */
+const superAdminOnly = (req, res, next) => {
+  if (!req.superAdmin || !req.superAdmin.isSuperAdmin) {
+    return res.status(403).json({
+      error: 'Forbidden',
+      message: 'This resource requires super admin access',
+    });
+  }
+  next();
+};
+
+/**
+ * Check if request is from super admin
+ * @param {Object} req - Express request
+ * @returns {boolean}
+ */
+const isSuperAdmin = (req) => {
+  return !!(req.superAdmin && req.superAdmin.isSuperAdmin);
+};
+
 module.exports = {
   generateToken,
+  generateSuperAdminToken,
   verifyToken,
   authenticate,
+  authenticateSuperAdmin,
+  authenticateAny,
   optionalAuth,
   authorize,
   adminOnly,
   managerOnly,
+  superAdminOnly,
   hasMinimumRole,
+  isSuperAdmin,
 };
