@@ -8,6 +8,9 @@
     "dev": "nodemon src/index.js",
     "migrate": "node src/database/migrate.js",
     "seed": "node src/database/seed.js",
+    "seed:force": "node src/database/seed.js --force",
+    "debug:auth": "node src/database/debug-auth.js",
+    "reset:admin": "node src/database/reset-admin-password.js",
     "test": "jest",
     "lint": "eslint src/"
   },
