@@ -17,6 +17,10 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  Plus,
+  RotateCcw,
+  AlertCircle,
+  CheckCircle2,
 } from 'lucide-react';
 
 const statusColors = {
@@ -33,7 +37,152 @@ const subscriptionColors = {
   cancelled: 'bg-slate-500/10 text-slate-400',
 };
 
-const TenantModal = ({ tenant, onClose, onSave }) => {
+// Toast notification component
+const Toast = ({ message, type, onClose }) => (
+  <div className={`fixed bottom-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg animate-slide-up ${
+    type === 'success' ? 'bg-emerald-900/90 border border-emerald-700' : 'bg-red-900/90 border border-red-700'
+  }`}>
+    {type === 'success' ? (
+      <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+    ) : (
+      <AlertCircle className="w-5 h-5 text-red-400" />
+    )}
+    <span className="text-white text-sm">{message}</span>
+    <button onClick={onClose} className="ml-2 text-slate-400 hover:text-white">
+      <X className="w-4 h-4" />
+    </button>
+  </div>
+);
+
+const CreateTenantModal = ({ onClose, onSave, showToast }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    subscriptionPlan: 'starter',
+  });
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setIsSaving(true);
+    try {
+      await superAdminApi.createTenant(formData);
+      showToast('Tenant created successfully', 'success');
+      onSave();
+    } catch (error) {
+      setError(error.message || 'Failed to create tenant');
+    }
+    setIsSaving(false);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg shadow-2xl">
+        <div className="flex items-center justify-between p-6 border-b border-slate-800">
+          <h3 className="text-lg font-semibold text-white">Create New Tenant</h3>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {error && (
+            <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5">Restaurant Name *</label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="e.g., Mario's Italian Kitchen"
+              className="w-full px-4 py-3 bg-slate-800/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5">Email *</label>
+            <input
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              placeholder="contact@restaurant.com"
+              className="w-full px-4 py-3 bg-slate-800/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5">Phone</label>
+            <input
+              type="text"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              placeholder="+49 123 456789"
+              className="w-full px-4 py-3 bg-slate-800/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5">Address</label>
+            <textarea
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              placeholder="Street, City, Country"
+              rows={2}
+              className="w-full px-4 py-3 bg-slate-800/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 resize-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5">Subscription Plan</label>
+            <select
+              value={formData.subscriptionPlan}
+              onChange={(e) => setFormData({ ...formData, subscriptionPlan: e.target.value })}
+              className="w-full px-4 py-3 bg-slate-800/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
+            >
+              <option value="starter">Starter</option>
+              <option value="professional">Professional</option>
+              <option value="enterprise">Enterprise</option>
+            </select>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-3 px-4 bg-slate-800 text-white rounded-xl hover:bg-slate-700 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="flex-1 py-3 px-4 bg-emerald-600 text-white rounded-xl hover:bg-emerald-500 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+            >
+              {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+              Create Tenant
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const TenantModal = ({ tenant, onClose, onSave, showToast }) => {
   const [formData, setFormData] = useState({
     name: tenant?.name || '',
     email: tenant?.email || '',
@@ -43,15 +192,18 @@ const TenantModal = ({ tenant, onClose, onSave }) => {
     subscriptionPlan: tenant?.subscriptionPlan || 'starter',
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     setIsSaving(true);
     try {
       await superAdminApi.updateTenant(tenant.id, formData);
+      showToast('Tenant updated successfully', 'success');
       onSave();
     } catch (error) {
-      console.error('Failed to update tenant:', error);
+      setError(error.message || 'Failed to update tenant');
     }
     setIsSaving(false);
   };
@@ -70,6 +222,13 @@ const TenantModal = ({ tenant, onClose, onSave }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {error && (
+            <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-1.5">Name</label>
             <input
@@ -272,8 +431,15 @@ export default function SuperAdminTenantsPage() {
   const [page, setPage] = useState(0);
   const [selectedTenant, setSelectedTenant] = useState(null);
   const [viewTenant, setViewTenant] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [openMenu, setOpenMenu] = useState(null);
+  const [toast, setToast] = useState(null);
   const limit = 10;
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   const loadTenants = async () => {
     setIsLoading(true);
@@ -288,6 +454,7 @@ export default function SuperAdminTenantsPage() {
       setTotal(res.total || 0);
     } catch (error) {
       console.error('Failed to load tenants:', error);
+      showToast('Failed to load tenants', 'error');
     }
     setIsLoading(false);
   };
@@ -308,9 +475,20 @@ export default function SuperAdminTenantsPage() {
     if (!confirm('Are you sure you want to deactivate this tenant?')) return;
     try {
       await superAdminApi.deleteTenant(tenantId);
+      showToast('Tenant deactivated successfully', 'success');
       loadTenants();
     } catch (error) {
-      console.error('Failed to deactivate tenant:', error);
+      showToast('Failed to deactivate tenant', 'error');
+    }
+  };
+
+  const handleReactivate = async (tenantId) => {
+    try {
+      await superAdminApi.reactivateTenant(tenantId);
+      showToast('Tenant reactivated successfully', 'success');
+      loadTenants();
+    } catch (error) {
+      showToast('Failed to reactivate tenant', 'error');
     }
   };
 
@@ -318,12 +496,22 @@ export default function SuperAdminTenantsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Toast */}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Tenants</h1>
           <p className="text-slate-400">Manage all restaurant tenants on the platform</p>
         </div>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-500 transition-colors font-medium"
+        >
+          <Plus className="w-5 h-5" />
+          Create Tenant
+        </button>
       </div>
 
       {/* Filters */}
@@ -358,6 +546,23 @@ export default function SuperAdminTenantsPage() {
         {isLoading ? (
           <div className="flex items-center justify-center p-12">
             <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+          </div>
+        ) : tenants.length === 0 ? (
+          <div className="flex flex-col items-center justify-center p-12 text-center">
+            <Building2 className="w-12 h-12 text-slate-600 mb-4" />
+            <h3 className="text-lg font-medium text-white mb-1">No tenants found</h3>
+            <p className="text-slate-400 text-sm mb-4">
+              {search || statusFilter ? 'Try adjusting your search or filters' : 'Get started by creating your first tenant'}
+            </p>
+            {!search && !statusFilter && (
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-500 transition-colors text-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Create Tenant
+              </button>
+            )}
           </div>
         ) : (
           <>
@@ -445,13 +650,23 @@ export default function SuperAdminTenantsPage() {
                                   <Edit className="w-4 h-4" />
                                   Edit
                                 </button>
-                                <button
-                                  onClick={() => { handleDeactivate(tenant.id); setOpenMenu(null); }}
-                                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-slate-700"
-                                >
-                                  <Ban className="w-4 h-4" />
-                                  Deactivate
-                                </button>
+                                {tenant.status === 'active' ? (
+                                  <button
+                                    onClick={() => { handleDeactivate(tenant.id); setOpenMenu(null); }}
+                                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-slate-700"
+                                  >
+                                    <Ban className="w-4 h-4" />
+                                    Deactivate
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => { handleReactivate(tenant.id); setOpenMenu(null); }}
+                                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-emerald-400 hover:bg-slate-700"
+                                  >
+                                    <RotateCcw className="w-4 h-4" />
+                                    Reactivate
+                                  </button>
+                                )}
                               </div>
                             </>
                           )}
@@ -495,11 +710,19 @@ export default function SuperAdminTenantsPage() {
       </div>
 
       {/* Modals */}
+      {showCreateModal && (
+        <CreateTenantModal
+          onClose={() => setShowCreateModal(false)}
+          onSave={() => { setShowCreateModal(false); loadTenants(); }}
+          showToast={showToast}
+        />
+      )}
       {selectedTenant && (
         <TenantModal
           tenant={selectedTenant}
           onClose={() => setSelectedTenant(null)}
           onSave={() => { setSelectedTenant(null); loadTenants(); }}
+          showToast={showToast}
         />
       )}
       {viewTenant && (

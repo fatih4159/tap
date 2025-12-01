@@ -164,6 +164,8 @@ export const superAdminApi = {
   login: (email, password) => api.post('/superadmin/auth/login', { email, password }),
   me: () => api.get('/superadmin/me'),
   refresh: () => api.post('/superadmin/refresh'),
+  changePassword: (currentPassword, newPassword) => 
+    api.put('/superadmin/password', { currentPassword, newPassword }),
   
   // Stats
   getStats: () => api.get('/superadmin/stats'),
@@ -171,8 +173,10 @@ export const superAdminApi = {
   // Tenants
   getTenants: (params) => api.get(`/superadmin/tenants?${new URLSearchParams(params || {})}`),
   getTenant: (id) => api.get(`/superadmin/tenants/${id}`),
+  createTenant: (data) => api.post('/superadmin/tenants', data),
   updateTenant: (id, data) => api.put(`/superadmin/tenants/${id}`, data),
   deleteTenant: (id) => api.delete(`/superadmin/tenants/${id}`),
+  reactivateTenant: (id) => api.post(`/superadmin/tenants/${id}/reactivate`),
   
   // Users (cross-tenant)
   getUsers: (params) => api.get(`/superadmin/users?${new URLSearchParams(params || {})}`),
@@ -180,6 +184,7 @@ export const superAdminApi = {
   createUser: (data) => api.post('/superadmin/users', data),
   updateUser: (id, data) => api.put(`/superadmin/users/${id}`, data),
   deleteUser: (id) => api.delete(`/superadmin/users/${id}`),
+  reactivateUser: (id) => api.post(`/superadmin/users/${id}/reactivate`),
   
   // Super Admins
   getSuperAdmins: () => api.get('/superadmin/admins'),

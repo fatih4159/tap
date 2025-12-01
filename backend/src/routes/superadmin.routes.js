@@ -451,6 +451,105 @@ router.delete(
   }
 );
 
+/**
+ * @route POST /api/superadmin/tenants
+ * @desc Create a new tenant
+ * @access Super Admin
+ */
+router.post(
+  '/tenants',
+  [
+    body('name').notEmpty().trim().withMessage('Restaurant name is required'),
+    body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
+    body('phone').optional().trim(),
+    body('address').optional().trim(),
+    body('subscriptionPlan').optional().isIn(['starter', 'professional', 'enterprise']),
+  ],
+  handleValidationErrors,
+  async (req, res) => {
+    try {
+      const { name, email, phone, address, subscriptionPlan = 'starter' } = req.body;
+
+      // Generate slug from name
+      let slug = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+
+      // Ensure unique slug
+      let isAvailable = await Tenant.isSlugAvailable(slug);
+      if (!isAvailable) {
+        slug = `${slug}-${Math.random().toString(36).substring(2, 7)}`;
+      }
+
+      const tenant = await Tenant.create({
+        name,
+        slug,
+        email,
+        phone,
+        address,
+        subscriptionPlan,
+      });
+
+      await SuperAdmin.logAction(req.superAdmin.id, 'create_tenant', {
+        entityType: 'tenant',
+        entityId: tenant.id,
+      }, req);
+
+      res.status(201).json({
+        message: 'Tenant created successfully',
+        tenant,
+      });
+    } catch (error) {
+      console.error('Create tenant error:', error);
+      res.status(500).json({
+        error: 'Failed to create tenant',
+        message: 'An error occurred while creating tenant',
+      });
+    }
+  }
+);
+
+/**
+ * @route POST /api/superadmin/tenants/:id/reactivate
+ * @desc Reactivate a deactivated tenant
+ * @access Super Admin
+ */
+router.post(
+  '/tenants/:id/reactivate',
+  [param('id').isUUID().withMessage('Invalid tenant ID')],
+  handleValidationErrors,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const tenant = await Tenant.update(id, { status: 'active' });
+
+      if (!tenant) {
+        return res.status(404).json({
+          error: 'Not Found',
+          message: 'Tenant not found',
+        });
+      }
+
+      await SuperAdmin.logAction(req.superAdmin.id, 'reactivate_tenant', {
+        entityType: 'tenant',
+        entityId: id,
+      }, req);
+
+      res.json({
+        message: 'Tenant reactivated successfully',
+        tenant,
+      });
+    } catch (error) {
+      console.error('Reactivate tenant error:', error);
+      res.status(500).json({
+        error: 'Failed to reactivate tenant',
+        message: 'An error occurred while reactivating tenant',
+      });
+    }
+  }
+);
+
 // ============================================
 // CROSS-TENANT USER MANAGEMENT
 // ============================================
@@ -754,9 +853,103 @@ router.post(
   }
 );
 
+/**
+ * @route POST /api/superadmin/users/:id/reactivate
+ * @desc Reactivate a deactivated user
+ * @access Super Admin
+ */
+router.post(
+  '/users/:id/reactivate',
+  [param('id').isUUID().withMessage('Invalid user ID')],
+  handleValidationErrors,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      // First get the user to find their tenant
+      const findResult = await query('SELECT tenant_id FROM users WHERE id = $1', [id]);
+      
+      if (findResult.rows.length === 0) {
+        return res.status(404).json({
+          error: 'Not Found',
+          message: 'User not found',
+        });
+      }
+
+      const tenantId = findResult.rows[0].tenant_id;
+      const user = await User.update(tenantId, id, { isActive: true });
+
+      await SuperAdmin.logAction(req.superAdmin.id, 'reactivate_user', {
+        entityType: 'user',
+        entityId: id,
+      }, req);
+
+      res.json({
+        message: 'User reactivated successfully',
+        user,
+      });
+    } catch (error) {
+      console.error('Reactivate user error:', error);
+      res.status(500).json({
+        error: 'Failed to reactivate user',
+        message: 'An error occurred while reactivating user',
+      });
+    }
+  }
+);
+
 // ============================================
 // SUPER ADMIN MANAGEMENT (Self + Others)
 // ============================================
+
+/**
+ * @route PUT /api/superadmin/password
+ * @desc Update current super admin's password
+ * @access Super Admin
+ */
+router.put(
+  '/password',
+  [
+    body('currentPassword').notEmpty().withMessage('Current password required'),
+    body('newPassword')
+      .isLength({ min: 12 })
+      .withMessage('New password must be at least 12 characters'),
+  ],
+  handleValidationErrors,
+  async (req, res) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+
+      // Get current super admin with password hash
+      const superAdminRecord = await SuperAdmin.findByEmail(req.superAdmin.email);
+
+      // Verify current password
+      const isValid = await SuperAdmin.verifyPassword(currentPassword, superAdminRecord.password_hash);
+
+      if (!isValid) {
+        return res.status(401).json({
+          error: 'Invalid password',
+          message: 'Current password is incorrect',
+        });
+      }
+
+      // Update password
+      await SuperAdmin.update(req.superAdmin.id, { password: newPassword });
+
+      await SuperAdmin.logAction(req.superAdmin.id, 'change_password', {}, req);
+
+      res.json({
+        message: 'Password updated successfully',
+      });
+    } catch (error) {
+      console.error('Password update error:', error);
+      res.status(500).json({
+        error: 'Failed to update password',
+        message: 'An error occurred while updating password',
+      });
+    }
+  }
+);
 
 /**
  * @route GET /api/superadmin/admins

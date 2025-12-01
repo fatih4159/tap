@@ -12,6 +12,7 @@ import {
   Menu,
   X,
   ChevronRight,
+  Settings,
 } from 'lucide-react';
 
 const navItems = [
@@ -20,6 +21,7 @@ const navItems = [
   { path: '/superadmin/users', icon: Users, label: 'Users' },
   { path: '/superadmin/admins', icon: UserCog, label: 'Super Admins' },
   { path: '/superadmin/audit', icon: FileText, label: 'Audit Log' },
+  { path: '/superadmin/settings', icon: Settings, label: 'Settings' },
 ];
 
 export default function SuperAdminLayout() {

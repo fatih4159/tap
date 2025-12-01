@@ -30,6 +30,7 @@ import SuperAdminTenantsPage from './pages/superadmin/SuperAdminTenantsPage';
 import SuperAdminUsersPage from './pages/superadmin/SuperAdminUsersPage';
 import SuperAdminAdminsPage from './pages/superadmin/SuperAdminAdminsPage';
 import SuperAdminAuditPage from './pages/superadmin/SuperAdminAuditPage';
+import SuperAdminSettingsPage from './pages/superadmin/SuperAdminSettingsPage';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children, roles }) => {
@@ -97,6 +98,7 @@ function App() {
         <Route path="users" element={<SuperAdminUsersPage />} />
         <Route path="admins" element={<SuperAdminAdminsPage />} />
         <Route path="audit" element={<SuperAdminAuditPage />} />
+        <Route path="settings" element={<SuperAdminSettingsPage />} />
       </Route>
 
       {/* Protected Dashboard Routes */}
