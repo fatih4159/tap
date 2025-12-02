@@ -15,6 +15,7 @@ const paymentsRoutes = require('./routes/payments.routes');
 const tseRoutes = require('./routes/tse.routes');
 const tablesRoutes = require('./routes/tables.routes');
 const menuRoutes = require('./routes/menu.routes');
+const superadminRoutes = require('./routes/superadmin.routes');
 
 // Import services
 const { initializeSocket } = require('./services/socket.service');
@@ -76,6 +77,7 @@ app.use('/api/payments', paymentsRoutes);
 app.use('/api/tse', tseRoutes);
 app.use('/api/tables', tablesRoutes);
 app.use('/api/menu', menuRoutes);
+app.use('/api/superadmin', superadminRoutes);
 
 // 404 handler
 app.use((req, res) => {

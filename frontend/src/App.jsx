@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './stores/authStore';
+import { useSuperAdminStore } from './stores/superAdminStore';
 
 // Layouts
 import DashboardLayout from './components/layout/DashboardLayout';
 import GuestLayout from './components/layout/GuestLayout';
+import SuperAdminLayout from './components/layout/SuperAdminLayout';
 
 // Auth Pages
 import LoginPage from './pages/LoginPage';
@@ -21,6 +23,15 @@ import SettingsPage from './pages/SettingsPage';
 // Guest Pages
 import GuestOrderPage from './pages/GuestOrderPage';
 
+// Super Admin Pages
+import SuperAdminLoginPage from './pages/superadmin/SuperAdminLoginPage';
+import SuperAdminDashboardPage from './pages/superadmin/SuperAdminDashboardPage';
+import SuperAdminTenantsPage from './pages/superadmin/SuperAdminTenantsPage';
+import SuperAdminUsersPage from './pages/superadmin/SuperAdminUsersPage';
+import SuperAdminAdminsPage from './pages/superadmin/SuperAdminAdminsPage';
+import SuperAdminAuditPage from './pages/superadmin/SuperAdminAuditPage';
+import SuperAdminSettingsPage from './pages/superadmin/SuperAdminSettingsPage';
+
 // Protected Route Wrapper
 const ProtectedRoute = ({ children, roles }) => {
   const { isAuthenticated, user } = useAuthStore();
@@ -36,8 +47,25 @@ const ProtectedRoute = ({ children, roles }) => {
   return children;
 };
 
+// Super Admin Protected Route
+const SuperAdminRoute = ({ children }) => {
+  const { isAuthenticated, refreshSession } = useSuperAdminStore();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      refreshSession();
+    }
+  }, []);
+
+  if (!isAuthenticated) {
+    return <Navigate to="/superadmin/login" replace />;
+  }
+
+  return children;
+};
+
 function App() {
-  const { refreshUser, isAuthenticated } = useAuthStore();
+  const { refreshUser } = useAuthStore();
 
   useEffect(() => {
     // Try to restore session on app load
@@ -56,6 +84,22 @@ function App() {
           <GuestOrderPage />
         </GuestLayout>
       } />
+
+      {/* Super Admin Routes */}
+      <Route path="/superadmin/login" element={<SuperAdminLoginPage />} />
+      <Route path="/superadmin" element={
+        <SuperAdminRoute>
+          <SuperAdminLayout />
+        </SuperAdminRoute>
+      }>
+        <Route index element={<Navigate to="/superadmin/dashboard" replace />} />
+        <Route path="dashboard" element={<SuperAdminDashboardPage />} />
+        <Route path="tenants" element={<SuperAdminTenantsPage />} />
+        <Route path="users" element={<SuperAdminUsersPage />} />
+        <Route path="admins" element={<SuperAdminAdminsPage />} />
+        <Route path="audit" element={<SuperAdminAuditPage />} />
+        <Route path="settings" element={<SuperAdminSettingsPage />} />
+      </Route>
 
       {/* Protected Dashboard Routes */}
       <Route path="/" element={
